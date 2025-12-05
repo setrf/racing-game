@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Highway Racer</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <h1>Highway Racer</h1>
+        </header>
+        
+        <main class="game-main">
+            <div class="game-canvas-container">
+                <canvas id="gameCanvas" width="400" height="600"></canvas>
+                
+                <!-- Game UI Overlays -->
+                <div id="startScreen" class="game-overlay">
+                    <div class="overlay-content">
+                        <h2>Highway Racer</h2>
+                        <p>Avoid the cars and survive as long as you can!</p>
+                        <div class="instructions">
+                            <p>Use <span>←</span> <span>→</span> or <span>A</span> <span>D</span> to move</p>
+                            <p>Press <span>ESC</span> to pause</p>
+                        </div>
+                        <div class="high-score">High Score: <span id="highScore">0</span></div>
+                        <button id="startButton" class="game-button">Start Game</button>
+                    </div>
+                </div>
+                
+                <div id="gameOverScreen" class="game-overlay hidden">
+                    <div class="overlay-content">
+                        <h2>Game Over!</h2>
+                        <div class="final-score">Your Score: <span id="finalScore">0</span></div>
+                        <div class="new-high-score hidden">New High Score!</div>
+                        <button id="restartButton" class="game-button">Play Again</button>
+                    </div>
+                </div>
+                
+                <div id="pauseScreen" class="game-overlay hidden">
+                    <div class="overlay-content">
+                        <h2>Game Paused</h2>
+                        <p>Press <span>ESC</span> to resume</p>
+                    </div>
+                </div>
+                
+                <!-- Game HUD -->
+                <div id="gameHUD" class="game-hud hidden">
+                    <div class="hud-item">Score: <span id="currentScore">0</span></div>
+                    <div class="hud-item">High Score: <span id="hudHighScore">0</span></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="js/utils.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/obstacles.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
