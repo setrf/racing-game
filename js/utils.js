@@ -18,13 +18,21 @@ const GAME_CONSTANTS = {
     OBSTACLE_SPAWN_INTERVAL: 1500, // milliseconds
     MIN_OBSTACLE_GAP: 150, // pixels
     NEAR_MISS_THRESHOLD: 10, // pixels
-    NEAR_MISS_BONUS: 50
+    NEAR_MISS_BONUS: 50,
+    COMBO_TIMEOUT: 3000, // milliseconds to reset combo if no near miss
+    COMPOUND_COMBO_MULTIPLIER: 1.5, // Multiplier for consecutive near misses
+    
+    // Power-up constants
+    POWERUP_WIDTH: 30,
+    POWERUP_HEIGHT: 30,
+    POWERUP_SPAWN_INTERVAL: 10000, // milliseconds
+    POWERUP_DURATION: 5000, // milliseconds
+    POWERUP_POINTS_BONUS: 100
 };
 
 // Game state
 const GameState = {
     MENU: 'menu',
-    COUNTDOWN: 'countdown',
     PLAYING: 'playing',
     PAUSED: 'paused',
     GAME_OVER: 'game_over'
@@ -82,11 +90,25 @@ let screenShake = {
     offsetY: 0
 };
 
+// Screen flash effect variables
+let screenFlash = {
+    active: false,
+    duration: 0,
+    color: 'rgba(255, 255, 255, 0.3)'
+};
+
 // Start screen shake
 function startScreenShake(duration, magnitude) {
     screenShake.active = true;
     screenShake.duration = duration;
     screenShake.magnitude = magnitude;
+}
+
+// Start screen flash
+function startScreenFlash(duration, color = 'rgba(255, 255, 255, 0.3)') {
+    screenFlash.active = true;
+    screenFlash.duration = duration;
+    screenFlash.color = color;
 }
 
 // Update screen shake
@@ -105,6 +127,17 @@ function updateScreenShake(deltaTime) {
     }
 }
 
+// Update screen flash
+function updateScreenFlash(deltaTime) {
+    if (!screenFlash.active) return;
+    
+    screenFlash.duration -= deltaTime;
+    
+    if (screenFlash.duration <= 0) {
+        screenFlash.active = false;
+    }
+}
+
 // Apply screen shake to context
 function applyScreenShake(ctx) {
     if (screenShake.active) {
@@ -115,12 +148,89 @@ function applyScreenShake(ctx) {
     return false;
 }
 
+// Apply screen flash to context
+function applyScreenFlash(ctx) {
+    if (screenFlash.active) {
+        ctx.save();
+        ctx.fillStyle = screenFlash.color;
+        ctx.fillRect(0, 0, GAME_CONSTANTS.CANVAS_WIDTH, GAME_CONSTANTS.CANVAS_HEIGHT);
+        ctx.restore();
+    }
+}
+
 // Restore context after screen shake
 function restoreScreenShake(ctx, wasShaking) {
     if (wasShaking) {
         ctx.restore();
     }
 }
+
+// Sound system using Web Audio API
+let audioContext = null;
+
+// Initialize audio context
+function initAudio() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
+
+// Play a sound effect
+function playSound(frequency, duration, type = 'sine', volume = 0.3) {
+    if (!audioContext) initAudio();
+    
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = frequency;
+    oscillator.type = type;
+    
+    gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + duration);
+}
+
+// Sound effects
+const SoundEffects = {
+    // Collision sound - low frequency noise
+    collision: function() {
+        playSound(100, 0.5, 'sawtooth', 0.4);
+        setTimeout(() => playSound(80, 0.3, 'square', 0.3), 100);
+    },
+    
+    // Near miss sound - quick beep
+    nearMiss: function() {
+        playSound(800, 0.1, 'sine', 0.2);
+    },
+    
+    // Game over sound - descending tones
+    gameOver: function() {
+        playSound(400, 0.2, 'sine', 0.3);
+        setTimeout(() => playSound(300, 0.2, 'sine', 0.3), 200);
+        setTimeout(() => playSound(200, 0.3, 'sine', 0.3), 400);
+    },
+    
+    // Button click sound
+    buttonClick: function() {
+        playSound(600, 0.05, 'sine', 0.2);
+    },
+    
+    // Score increase sound
+    scoreIncrease: function() {
+        playSound(500, 0.1, 'sine', 0.15);
+    },
+    
+    // Power-up collection sound
+    powerUp: function() {
+        playSound(800, 0.2, 'sine', 0.3);
+        setTimeout(() => playSound(1000, 0.2, 'sine', 0.3), 100);
+    }
+};
 
 // Draw road with lane markings
 function drawRoad(ctx) {
@@ -162,7 +272,7 @@ function drawRoad(ctx) {
     }
 }
 
-// Particle system for visual effects
+// Particle class for visual effects
 class Particle {
     constructor(x, y, color, velocity, lifetime) {
         this.x = x;
@@ -170,17 +280,19 @@ class Particle {
         this.color = color;
         this.velocity = velocity;
         this.lifetime = lifetime;
-        this.maxLifetime = lifetime;
-        this.size = Math.random() * 3 + 1;
+        this.age = 0;
+        this.size = randomInt(2, 5);
     }
     
     update(deltaTime) {
         this.x += this.velocity.x;
         this.y += this.velocity.y;
-        this.lifetime -= deltaTime;
+        this.age += deltaTime;
         
-        // Fade out as lifetime decreases
-        this.opacity = this.lifetime / this.maxLifetime;
+        // Fade out as particle ages
+        this.opacity = Math.max(0, 1 - (this.age / this.lifetime));
+        
+        return this.age < this.lifetime;
     }
     
     draw(ctx) {
@@ -190,39 +302,40 @@ class Particle {
         ctx.fillRect(this.x, this.y, this.size, this.size);
         ctx.restore();
     }
-    
-    isDead() {
-        return this.lifetime <= 0;
-    }
 }
 
+// Particle system manager
 class ParticleSystem {
     constructor() {
         this.particles = [];
     }
     
-    emit(x, y, count, color, velocityRange) {
-        for (let i = 0; i < count; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = Math.random() * velocityRange.max + velocityRange.min;
+    createNearMissEffect(x, y) {
+        const particleCount = 15;
+        const colors = ['#ffff00', '#ff9900', '#ff3300'];
+        
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (Math.PI * 2 * i) / particleCount;
+            const speed = randomInt(1, 3);
+            const color = colors[randomInt(0, colors.length - 1)];
             
-            const velocity = {
-                x: Math.cos(angle) * speed,
-                y: Math.sin(angle) * speed
-            };
-            
-            const lifetime = Math.random() * 500 + 300; // 300-800ms lifetime
-            
-            this.particles.push(new Particle(x, y, color, velocity, lifetime));
+            this.particles.push(new Particle(
+                x,
+                y,
+                color,
+                {
+                    x: Math.cos(angle) * speed,
+                    y: Math.sin(angle) * speed
+                },
+                500 // 500ms lifetime
+            ));
         }
     }
     
     update(deltaTime) {
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const particle = this.particles[i];
-            particle.update(deltaTime);
-            
-            if (particle.isDead()) {
+            if (!particle.update(deltaTime)) {
                 this.particles.splice(i, 1);
             }
         }
@@ -234,7 +347,10 @@ class ParticleSystem {
         }
     }
     
-    clear() {
+    reset() {
         this.particles = [];
     }
 }
+
+// Create a global particle system instance
+let particleSystem = new ParticleSystem();

@@ -11,6 +11,11 @@ class Player {
         this.moving = false;
         this.moveSpeed = 10; // Speed of lane change animation
         this.color = '#4d79ff'; // Blue car
+        
+        // Animation properties
+        this.tiltAngle = 0;
+        this.targetTiltAngle = 0;
+        this.tiltSpeed = 0.2;
     }
     
     // Calculate X position based on lane
@@ -26,6 +31,13 @@ class Player {
         
         this.targetLane = targetLane;
         this.moving = true;
+        
+        // Set tilt angle based on direction
+        if (targetLane < this.lane) {
+            this.targetTiltAngle = -0.1; // Tilt left
+        } else if (targetLane > this.lane) {
+            this.targetTiltAngle = 0.1; // Tilt right
+        }
     }
     
     // Update player position for smooth lane transitions
@@ -38,14 +50,29 @@ class Player {
                 this.x = targetX;
                 this.lane = this.targetLane;
                 this.moving = false;
+                this.targetTiltAngle = 0; // Reset tilt when movement is complete
             } else {
                 this.x += dx > 0 ? this.moveSpeed : -this.moveSpeed;
             }
+        }
+        
+        // Update tilt angle with smooth transition
+        if (Math.abs(this.tiltAngle - this.targetTiltAngle) > 0.01) {
+            this.tiltAngle += (this.targetTiltAngle - this.tiltAngle) * this.tiltSpeed;
+        } else {
+            this.tiltAngle = this.targetTiltAngle;
         }
     }
     
     // Draw the player car
     draw(ctx) {
+        ctx.save();
+        
+        // Apply tilt transformation
+        ctx.translate(this.x + this.width/2, this.y + this.height/2);
+        ctx.rotate(this.tiltAngle);
+        ctx.translate(-(this.x + this.width/2), -(this.y + this.height/2));
+        
         // Car body
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -70,6 +97,8 @@ class Player {
         ctx.fillStyle = '#ff4d4d';
         ctx.fillRect(this.x + 5, this.y + this.height - 5, 10, 3);
         ctx.fillRect(this.x + this.width - 15, this.y + this.height - 5, 10, 3);
+        
+        ctx.restore();
     }
     
     // Get player's collision rectangle
@@ -100,5 +129,7 @@ class Player {
         this.targetLane = this.lane;
         this.x = this.calculateXPosition(this.lane);
         this.moving = false;
+        this.tiltAngle = 0;
+        this.targetTiltAngle = 0;
     }
 }

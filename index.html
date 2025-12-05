@@ -24,7 +24,6 @@
                         <div class="instructions">
                             <p>Use <span>←</span> <span>→</span> or <span>A</span> <span>D</span> to move</p>
                             <p>Press <span>ESC</span> to pause</p>
-                            <p>Press <span>R</span> to restart</p>
                         </div>
                         <div class="high-score">High Score: <span id="highScore">0</span></div>
                         <button id="startButton" class="game-button">Start Game</button>
@@ -44,21 +43,30 @@
                     <div class="overlay-content">
                         <h2>Game Paused</h2>
                         <p>Press <span>ESC</span> to resume</p>
-                    </div>
-                </div>
-                
-                <div id="countdownScreen" class="game-overlay hidden">
-                    <div class="overlay-content">
-                        <div id="countdownNumber" class="countdown-number">3</div>
+                        <div class="controls-info">
+                            <h3>Controls</h3>
+                            <div class="control-item">
+                                <span class="key">←</span> <span class="key">→</span> or <span class="key">A</span> <span class="key">D</span>
+                                <span>Move left/right</span>
+                            </div>
+                            <div class="control-item">
+                                <span class="key">ESC</span>
+                                <span>Pause/Resume</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
                 <!-- Game HUD -->
                 <div id="gameHUD" class="game-hud hidden">
-                    <div class="hud-item">Score: <span id="currentScore">0</span></div>
-                    <div class="hud-item">Speed: <span id="currentSpeed">0</span> km/h</div>
-                    <div class="hud-item">Distance: <span id="distanceTraveled">0</span> m</div>
-                    <div class="hud-item">High Score: <span id="hudHighScore">0</span></div>
+                    <div class="hud-left">
+                        <div class="hud-item">Score: <span id="currentScore">0</span></div>
+                        <div class="hud-item">Speed: <span id="currentSpeed">0</span> km/h</div>
+                        <div class="hud-item combo">Combo: <span id="comboMultiplier">x1</span></div>
+                    </div>
+                    <div class="hud-right">
+                        <div class="hud-item">High Score: <span id="hudHighScore">0</span></div>
+                    </div>
                 </div>
             </div>
         </main>
