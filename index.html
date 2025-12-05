@@ -24,6 +24,7 @@
                         <div class="instructions">
                             <p>Use <span>←</span> <span>→</span> or <span>A</span> <span>D</span> to move</p>
                             <p>Press <span>ESC</span> to pause</p>
+                            <p>Press <span>R</span> to restart</p>
                         </div>
                         <div class="high-score">High Score: <span id="highScore">0</span></div>
                         <button id="startButton" class="game-button">Start Game</button>
@@ -46,9 +47,17 @@
                     </div>
                 </div>
                 
+                <div id="countdownScreen" class="game-overlay hidden">
+                    <div class="overlay-content">
+                        <div id="countdownNumber" class="countdown-number">3</div>
+                    </div>
+                </div>
+                
                 <!-- Game HUD -->
                 <div id="gameHUD" class="game-hud hidden">
                     <div class="hud-item">Score: <span id="currentScore">0</span></div>
+                    <div class="hud-item">Speed: <span id="currentSpeed">0</span> km/h</div>
+                    <div class="hud-item">Distance: <span id="distanceTraveled">0</span> m</div>
                     <div class="hud-item">High Score: <span id="hudHighScore">0</span></div>
                 </div>
             </div>

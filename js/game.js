@@ -2,13 +2,15 @@
 
 // DOM elements
 let canvas, ctx;
-let startScreen, gameOverScreen, pauseScreen, gameHUD;
+let startScreen, gameOverScreen, pauseScreen, gameHUD, countdownScreen;
 let highScoreElement, currentScoreElement, hudHighScoreElement, finalScoreElement, newHighScoreElement;
+let currentSpeedElement, countdownNumberElement, distanceTraveledElement;
 let startButton, restartButton;
 
 // Game objects
 let player;
 let obstacleManager;
+let particleSystem;
 
 // Game state
 let gameState = GameState.MENU;
@@ -17,6 +19,7 @@ let highScore = 0;
 let gameTime = 0;
 let lastTime = 0;
 let nearMissStreak = 0;
+let distanceTraveled = 0;
 
 // Initialize game when page loads
 window.addEventListener('load', initGame);
@@ -33,14 +36,18 @@ function initGame() {
     gameOverScreen = document.getElementById('gameOverScreen');
     pauseScreen = document.getElementById('pauseScreen');
     gameHUD = document.getElementById('gameHUD');
+    countdownScreen = document.getElementById('countdownScreen');
     
-    console.log('UI elements:', startScreen, gameOverScreen, pauseScreen, gameHUD);
+    console.log('UI elements:', startScreen, gameOverScreen, pauseScreen, gameHUD, countdownScreen);
     
     highScoreElement = document.getElementById('highScore');
     currentScoreElement = document.getElementById('currentScore');
     hudHighScoreElement = document.getElementById('hudHighScore');
     finalScoreElement = document.getElementById('finalScore');
     newHighScoreElement = document.querySelector('.new-high-score');
+    currentSpeedElement = document.getElementById('currentSpeed');
+    countdownNumberElement = document.getElementById('countdownNumber');
+    distanceTraveledElement = document.getElementById('distanceTraveled');
     
     startButton = document.getElementById('startButton');
     restartButton = document.getElementById('restartButton');
@@ -50,6 +57,7 @@ function initGame() {
     // Initialize game objects
     player = new Player(1); // Start in middle lane
     obstacleManager = new ObstacleManager();
+    particleSystem = new ParticleSystem();
     
     // Load high score
     highScore = getHighScore();
@@ -84,6 +92,13 @@ function handleKeyDown(e) {
         }
     } else if (gameState === GameState.PAUSED && e.key === 'Escape') {
         resumeGame();
+    } else if (gameState === GameState.COUNTDOWN) {
+        // Allow player to move during countdown
+        player.handleKeyDown(e.key);
+    } else if (gameState === GameState.GAME_OVER && (e.key === 'r' || e.key === 'R')) {
+        startGame();
+    } else if (gameState === GameState.MENU && (e.key === 'r' || e.key === 'R')) {
+        startGame();
     }
 }
 
@@ -91,15 +106,17 @@ function handleKeyDown(e) {
 function startGame() {
     console.log('Starting game...');
     // Reset game state
-    gameState = GameState.PLAYING;
+    gameState = GameState.COUNTDOWN;
     score = 0;
     gameTime = 0;
     lastTime = performance.now();
     nearMissStreak = 0;
+    distanceTraveled = 0;
     
     // Reset game objects
     player.reset();
     obstacleManager.reset();
+    particleSystem.clear();
     
     // Update UI
     updateScore();
@@ -110,9 +127,13 @@ function startGame() {
     
     gameOverScreen.classList.add('hidden');
     gameHUD.classList.remove('hidden');
+    countdownScreen.classList.remove('hidden');
     console.log('gameHUD.classList:', gameHUD.classList.toString());
     
-    console.log('Game started');
+    // Start countdown
+    startCountdown();
+    
+    console.log('Game started with countdown');
 }
 
 // Pause the game
@@ -161,6 +182,47 @@ function updateScore() {
     currentScoreElement.textContent = score;
 }
 
+// Update speed display
+function updateSpeed() {
+    // Convert game speed to a more realistic km/h value
+    const speedKmh = Math.floor(obstacleManager.currentSpeed * 20);
+    currentSpeedElement.textContent = speedKmh;
+}
+
+// Update distance display
+function updateDistance() {
+    // Calculate distance based on game speed and time
+    // Speed is in pixels per frame, convert to meters
+    const speedMps = (obstacleManager.currentSpeed * 0.1); // Convert to meters per second
+    distanceTraveled += speedMps * (deltaTime / 1000); // Add distance for this frame
+    
+    // Display in meters
+    const distanceMeters = Math.floor(distanceTraveled);
+    distanceTraveledElement.textContent = distanceMeters;
+}
+
+// Start countdown before game begins
+function startCountdown() {
+    let count = 3;
+    countdownNumberElement.textContent = count;
+    
+    const countdownInterval = setInterval(() => {
+        count--;
+        
+        if (count > 0) {
+            countdownNumberElement.textContent = count;
+        } else if (count === 0) {
+            countdownNumberElement.textContent = 'GO!';
+            countdownNumberElement.style.color = '#4dff4d'; // Green for GO
+        } else {
+            clearInterval(countdownInterval);
+            countdownScreen.classList.add('hidden');
+            gameState = GameState.PLAYING;
+            lastTime = performance.now(); // Reset time to avoid big time jumps
+        }
+    }, 1000);
+}
+
 // Main game loop
 function gameLoop(timestamp) {
     // Calculate delta time
@@ -182,6 +244,7 @@ function gameLoop(timestamp) {
         // Update game objects
         player.update();
         obstacleManager.update(gameTime, deltaTime);
+        particleSystem.update(deltaTime);
         
         // Check for collisions
         const collision = obstacleManager.checkCollisions(player);
@@ -194,6 +257,18 @@ function gameLoop(timestamp) {
         if (nearMiss) {
             score += GAME_CONSTANTS.NEAR_MISS_BONUS;
             nearMissStreak++;
+            
+            // Create particle effect for near miss
+            const playerBox = player.getCollisionBox();
+            const x = playerBox.x + playerBox.width / 2;
+            const y = playerBox.y + playerBox.height / 2;
+            
+            particleSystem.emit(
+                x, y, 
+                10, // particle count
+                '#ffff00', // yellow color for near miss
+                { min: 1, max: 3 } // velocity range
+            );
         }
         
         // Update score based on time survived
@@ -203,6 +278,12 @@ function gameLoop(timestamp) {
         
         // Update score display
         updateScore();
+        
+        // Update speed display
+        updateSpeed();
+        
+        // Update distance display
+        updateDistance();
         
         // Log game state every second for debugging
         if (Math.floor(gameTime / 1000) !== Math.floor((gameTime - deltaTime) / 1000)) {
@@ -217,6 +298,7 @@ function gameLoop(timestamp) {
         
         player.draw(ctx);
         obstacleManager.draw(ctx);
+        particleSystem.draw(ctx);
         
         // Restore context after screen shake
         restoreScreenShake(ctx, wasShaking);

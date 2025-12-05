@@ -24,6 +24,7 @@ const GAME_CONSTANTS = {
 // Game state
 const GameState = {
     MENU: 'menu',
+    COUNTDOWN: 'countdown',
     PLAYING: 'playing',
     PAUSED: 'paused',
     GAME_OVER: 'game_over'
@@ -158,5 +159,82 @@ function drawRoad(ctx) {
         for (let y = -offset - markingHeight; y < GAME_CONSTANTS.CANVAS_HEIGHT + markingHeight; y += markingHeight + markingGap) {
             ctx.fillRect(x, y, markingWidth, markingHeight);
         }
+    }
+}
+
+// Particle system for visual effects
+class Particle {
+    constructor(x, y, color, velocity, lifetime) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.velocity = velocity;
+        this.lifetime = lifetime;
+        this.maxLifetime = lifetime;
+        this.size = Math.random() * 3 + 1;
+    }
+    
+    update(deltaTime) {
+        this.x += this.velocity.x;
+        this.y += this.velocity.y;
+        this.lifetime -= deltaTime;
+        
+        // Fade out as lifetime decreases
+        this.opacity = this.lifetime / this.maxLifetime;
+    }
+    
+    draw(ctx) {
+        ctx.save();
+        ctx.globalAlpha = this.opacity;
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+        ctx.restore();
+    }
+    
+    isDead() {
+        return this.lifetime <= 0;
+    }
+}
+
+class ParticleSystem {
+    constructor() {
+        this.particles = [];
+    }
+    
+    emit(x, y, count, color, velocityRange) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * velocityRange.max + velocityRange.min;
+            
+            const velocity = {
+                x: Math.cos(angle) * speed,
+                y: Math.sin(angle) * speed
+            };
+            
+            const lifetime = Math.random() * 500 + 300; // 300-800ms lifetime
+            
+            this.particles.push(new Particle(x, y, color, velocity, lifetime));
+        }
+    }
+    
+    update(deltaTime) {
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const particle = this.particles[i];
+            particle.update(deltaTime);
+            
+            if (particle.isDead()) {
+                this.particles.splice(i, 1);
+            }
+        }
+    }
+    
+    draw(ctx) {
+        for (const particle of this.particles) {
+            particle.draw(ctx);
+        }
+    }
+    
+    clear() {
+        this.particles = [];
     }
 }
