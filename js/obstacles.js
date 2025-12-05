@@ -35,8 +35,8 @@ class Obstacle {
     }
     
     // Update obstacle position
-    update() {
-        this.y += this.speed;
+    update(speedMultiplier = 1.0) {
+        this.y += this.speed * speedMultiplier;
     }
     
     // Draw the obstacle
@@ -136,7 +136,7 @@ class ObstacleManager {
     }
     
     // Update obstacle manager
-    update(currentTime, deltaTime) {
+    update(currentTime, deltaTime, speedMultiplier = 1.0) {
         // Update speed of obstacles over time
         if (currentTime - this.lastSpeedIncrease > this.speedIncreaseInterval) {
             this.currentSpeed += GAME_CONSTANTS.SPEED_INCREMENT;
@@ -146,7 +146,7 @@ class ObstacleManager {
         // Update existing obstacles
         for (let i = this.obstacles.length - 1; i >= 0; i--) {
             const obstacle = this.obstacles[i];
-            obstacle.update();
+            obstacle.update(speedMultiplier);
             
             // Remove obstacles that have gone off screen
             if (obstacle.isOffScreen()) {
