@@ -1,0 +1,27 @@
+/* Font Import */
+@font-face {
+  font-family: 'Inter';
+  src: url('../assets/fonts/inter.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Basic Reset and Page Setup */
+* {
+    font-family: 'Inter', serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(to bottom, #1a1a2e, #0f0f1e);
+    color: #ffffff;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+

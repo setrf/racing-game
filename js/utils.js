@@ -1,4 +1,4 @@
-// Utility functions for the racing game
+// Utility functions for racing game
 
 // Game constants
 const GAME_CONSTANTS = {
@@ -18,7 +18,12 @@ const GAME_CONSTANTS = {
     OBSTACLE_SPAWN_INTERVAL: 1500, // milliseconds
     MIN_OBSTACLE_GAP: 150, // pixels
     NEAR_MISS_THRESHOLD: 10, // pixels
-    NEAR_MISS_BONUS: 50
+    NEAR_MISS_BONUS: 50,
+    
+    // Power-up constants
+    POWER_UP_WIDTH: 40,
+    POWER_UP_HEIGHT: 40,
+    POWER_UP_SPAWN_INTERVAL: 8000 // milliseconds
 };
 
 // Game state
@@ -152,7 +157,7 @@ function drawRoad(ctx) {
     for (let lane = 1; lane < GAME_CONSTANTS.NUM_LANES; lane++) {
         const x = roadLeft + lane * laneWidth - markingWidth / 2;
         
-        // Animate the lane markings based on current game speed
+        // Animate lane markings based on current game speed
         const offset = (Date.now() / 10) % (markingHeight + markingGap);
         
         for (let y = -offset - markingHeight; y < GAME_CONSTANTS.CANVAS_HEIGHT + markingHeight; y += markingHeight + markingGap) {
@@ -160,3 +165,116 @@ function drawRoad(ctx) {
         }
     }
 }
+
+// Get accessible color
+function getAccessibleColor(colorName) {
+    if (window.accessibilityColors && window.accessibilityColors[colorName]) {
+        return window.accessibilityColors[colorName];
+    }
+    
+    // Default colors if no mapping available
+    const defaultColors = {
+        red: '#ff4d4d',
+        green: '#4dff4d',
+        blue: '#4d79ff',
+        yellow: '#ffcc33',
+        orange: '#ff9900',
+        purple: '#9900ff',
+        cyan: '#00ffff'
+    };
+    
+    return defaultColors[colorName] || colorName;
+}
+
+// Format score with commas
+function formatScore(score) {
+    return score.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+// Format date for display
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+}
+
+// Get formatted time from timestamp
+function getFormattedTime(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString();
+}
+
+// Performance monitoring
+let performanceMonitor = {
+    fps: 0,
+    frameCount: 0,
+    lastTime: performance.now(),
+    fpsHistory: [],
+    maxFpsHistoryLength: 60,
+    targetFPS: 60,
+    lowPerformanceThreshold: 30,
+    performanceMode: 'normal' // normal, reduced
+};
+
+// Update performance metrics
+function updatePerformanceMonitor() {
+    const now = performance.now();
+    performanceMonitor.frameCount++;
+    
+    // Calculate FPS every second
+    if (now - performanceMonitor.lastTime >= 1000) {
+        performanceMonitor.fps = performanceMonitor.frameCount;
+        performanceMonitor.fpsHistory.push(performanceMonitor.fps);
+        
+        // Keep only recent history
+        if (performanceMonitor.fpsHistory.length > performanceMonitor.maxFpsHistoryLength) {
+            performanceMonitor.fpsHistory.shift();
+        }
+        
+        // Check if performance is low
+        const avgFps = getAverageFPS();
+        if (avgFps < performanceMonitor.lowPerformanceThreshold && performanceMonitor.performanceMode === 'normal') {
+            console.warn(`Low performance detected: ${avgFps.toFixed(1)} FPS. Reducing visual effects.`);
+            performanceMonitor.performanceMode = 'reduced';
+            
+            // Update visual effects performance mode
+            if (typeof particleSystem !== 'undefined') {
+                particleSystem.maxParticles = 50; // Reduce max particles
+            }
+        } else if (avgFps >= performanceMonitor.lowPerformanceThreshold * 1.5 && performanceMonitor.performanceMode === 'reduced') {
+            console.log(`Performance improved: ${avgFps.toFixed(1)} FPS. Restoring visual effects.`);
+            performanceMonitor.performanceMode = 'normal';
+            
+            // Update visual effects performance mode
+            if (typeof particleSystem !== 'undefined') {
+                particleSystem.maxParticles = 200; // Restore normal max
+            }
+        }
+        
+        performanceMonitor.frameCount = 0;
+        performanceMonitor.lastTime = now;
+    }
+}
+
+// Get average FPS over history
+function getAverageFPS() {
+    if (performanceMonitor.fpsHistory.length === 0) return 0;
+    
+    const sum = performanceMonitor.fpsHistory.reduce((acc, fps) => acc + fps, 0);
+    return sum / performanceMonitor.fpsHistory.length;
+}
+
+// Get current performance mode
+function getPerformanceMode() {
+    return performanceMonitor.performanceMode;
+}
+
+// Game statistics tracking
+let gameStats = {
+    score: 0,
+    gameTime: 0,
+    nearMisses: 0,
+    powerUpsCollected: 0,
+    totalGames: 0,
+    carType: 'sedan',
+    environmentId: 0
+};

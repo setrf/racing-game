@@ -4,12 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Highway Racer</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=3">
 </head>
 <body>
     <div class="game-container">
         <header class="game-header">
             <h1>Highway Racer</h1>
+            <div class="header-buttons">
+                <button id="settingsButton" class="header-button">⚙️ Settings</button>
+                <button id="achievementsButton" class="header-button">🏆 Achievements</button>
+                <button id="leaderboardButton" class="header-button">🏆 Leaderboard</button>
+            </div>
         </header>
         
         <main class="game-main">
@@ -20,11 +28,35 @@
                 <div id="startScreen" class="game-overlay">
                     <div class="overlay-content">
                         <h2>Highway Racer</h2>
-                        <p>Avoid the cars and survive as long as you can!</p>
+                        <p>Navigate through traffic in this endless racing game! Choose from multiple game modes, collect power-ups, and compete for the high score!</p>
+                        
+                        <div class="game-modes">
+                            <h3>Select Game Mode</h3>
+                            <div class="mode-options">
+                                <div class="mode-option" data-mode="endless">
+                                    <div class="mode-name">Endless</div>
+                                    <div class="mode-desc">Survive as long as you can with increasing difficulty.</div>
+                                </div>
+                                <div class="mode-option" data-mode="timeTrial">
+                                    <div class="mode-name">Time Trial</div>
+                                    <div class="mode-desc">Score as many points as possible in 60 seconds!</div>
+                                </div>
+                                <div class="mode-option" data-mode="challenge">
+                                    <div class="mode-name">Challenge</div>
+                                    <div class="mode-desc">Complete specific challenges to earn rewards!</div>
+                                </div>
+                                <div class="mode-option" data-mode="zen">
+                                    <div class="mode-name">Zen</div>
+                                    <div class="mode-desc">Relaxing mode without collisions or pressure.</div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="instructions">
                             <p>Use <span>←</span> <span>→</span> or <span>A</span> <span>D</span> to move</p>
                             <p>Press <span>ESC</span> to pause</p>
                         </div>
+                        
                         <div class="high-score">High Score: <span id="highScore">0</span></div>
                         <button id="startButton" class="game-button">Start Game</button>
                     </div>
@@ -35,6 +67,14 @@
                         <h2>Game Over!</h2>
                         <div class="final-score">Your Score: <span id="finalScore">0</span></div>
                         <div class="new-high-score hidden">New High Score!</div>
+                        <div class="achievements-unlocked">
+                            <h3>Achievements Unlocked</h3>
+                            <div id="achievementsList"></div>
+                        </div>
+                        <div class="game-stats">
+                            <p>Time Survived: <span id="survivalTime">0</span>s</p>
+                            <p>Near Misses: <span id="nearMissCount">0</span></p>
+                        </div>
                         <button id="restartButton" class="game-button">Play Again</button>
                     </div>
                 </div>
@@ -48,16 +88,207 @@
                 
                 <!-- Game HUD -->
                 <div id="gameHUD" class="game-hud hidden">
-                    <div class="hud-item">Score: <span id="currentScore">0</span></div>
-                    <div class="hud-item">High Score: <span id="hudHighScore">0</span></div>
+                    <div class="hud-top">
+                        <div class="hud-item">Score: <span id="currentScore">0</span></div>
+                        <div class="hud-item">High Score: <span id="hudHighScore">0</span></div>
+                    </div>
+                    <div class="hud-bottom">
+                        <div id="modeDisplay" class="hud-item"></div>
+                        <div class="hud-item" id="activeEffects"></div>
+                        <div class="hud-item" id="environmentDisplay"></div>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
     
-    <script src="js/utils.js"></script>
-    <script src="js/player.js"></script>
-    <script src="js/obstacles.js"></script>
-    <script src="js/game.js"></script>
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Game Settings</h2>
+                <button class="close-button" id="closeSettings">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h3>Accessibility</h3>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="highContrast">
+                            <span>High Contrast</span>
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="reducedMotion">
+                            <span>Reduced Motion</span>
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="largeText">
+                            <span>Large Text</span>
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <span>Color Blind Mode:</span>
+                            <select id="colorBlindMode">
+                                <option value="normal">Normal</option>
+                                <option value="protanopia">Protanopia (Red-Blind)</option>
+                                <option value="deuteranopia">Deuteranopia (Green-Blind)</option>
+                                <option value="tritanopia">Tritanopia (Blue-Blind)</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <span>Difficulty:</span>
+                            <select id="difficulty">
+                                <option value="easy">Easy</option>
+                                <option value="normal">Normal</option>
+                                <option value="hard">Hard</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h3>Audio</h3>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="soundEnabled" checked>
+                            <span>Sound Effects</span>
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="musicEnabled" checked>
+                            <span>Background Music</span>
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <span>Master Volume:</span>
+                            <input type="range" id="masterVolume" min="0" max="1" step="0.1">
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <span>Music Volume:</span>
+                            <input type="range" id="musicVolume" min="0" max="1" step="0.1">
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h3>Game</h3>
+                    <div class="setting-group">
+                        <label>
+                            <span>Select Environment:</span>
+                            <select id="environmentSelect">
+                                <!-- Environments will be populated dynamically -->
+                            </select>
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <span>Select Vehicle:</span>
+                            <div id="vehicleSelection">
+                                <!-- Vehicle options will be populated dynamically -->
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-button" id="saveSettings">Save Settings</button>
+                <button class="modal-button secondary" id="resetSettings">Reset to Defaults</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Achievements Modal -->
+    <div id="achievementsModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Achievements</h2>
+                <button class="close-button" id="closeAchievements">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="achievement-stats">
+                    <p>Unlocked: <span id="achievementCount">0</span> / <span id="totalAchievements">0</span></p>
+                    <div class="progress-bar">
+                        <div id="achievementProgress" class="progress-fill"></div>
+                    </div>
+                </div>
+                <div class="achievements-list" id="achievementsContainer">
+                    <!-- Achievements will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leaderboard Modal -->
+    <div id="leaderboardModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Leaderboard</h2>
+                <button class="close-button" id="closeLeaderboard">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="tab-container">
+                    <button class="tab-button active" data-tab="endless">Endless</button>
+                    <button class="tab-button" data-tab="timeTrial">Time Trial</button>
+                    <button class="tab-button" data-tab="challenge">Challenge</button>
+                    <button class="tab-button" data-tab="zen">Zen</button>
+                </div>
+                <div class="leaderboard-content">
+                    <table id="leaderboardTable">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Name</th>
+                                <th>Score</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboardBody">
+                            <!-- Leaderboard entries will be populated dynamically -->
+                        </tbody>
+                    </table>
+                    <div id="emptyLeaderboard">No scores yet. Be the first to set a high score!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="game-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2>Loading Highway Racer...</h2>
+            <div class="loading-progress">
+                <div class="progress-bar">
+                    <div id="loadingProgress" class="progress-fill"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils.js?v=3"></script>
+    <script src="js/player.js?v=3"></script>
+    <script src="js/obstacles.js?v=3"></script>
+    <script src="js/game.js?v=3"></script>
+    <script src="js/achievements.js?v=3"></script>
+    <script src="js/powerups.js?v=3"></script>
+    <script src="js/particles.js?v=3"></script>
+    <script src="js/sound.js?v=3"></script>
+    <script src="js/gamemodes.js?v=3"></script>
+    <script src="js/leaderboard.js?v=3"></script>
+    <script src="js/vehicles.js?v=3"></script>
+    <script src="js/accessibility.js?v=3"></script>
+    <script src="js/touchControls.js?v=3"></script>
+    <script src="js/environments.js?v=3"></script>
 </body>
 </html>
