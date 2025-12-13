@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Racing Game Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .pass { color: green; }
+        .fail { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Racing Game Debug Test</h1>
+
+    <div class="test-section">
+        <h2>Module Loading Tests</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Console Output</h2>
+        <pre id="console-output"></pre>
+    </div>
+
+    <!-- Load all game modules -->
+    <script src="js/utils.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/obstacles.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/achievements.js"></script>
+    <script src="js/powerups.js"></script>
+    <script src="js/particles.js"></script>
+    <script src="js/sound.js"></script>
+    <script src="js/gamemodes.js"></script>
+    <script src="js/leaderboard.js"></script>
+    <script src="js/vehicles.js"></script>
+    <script src="js/accessibility.js"></script>
+    <script src="js/touchControls.js"></script>
+    <script src="js/environments.js"></script>
+
+    <script>
+        const results = document.getElementById('test-results');
+        const consoleOutput = document.getElementById('console-output');
+
+        // Override console.log to capture output
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            consoleOutput.textContent += args.join(' ') + '\n';
+        };
+
+        // Tests
+        const tests = [
+            {
+                name: 'GAME_CONSTANTS loaded',
+                test: () => typeof GAME_CONSTANTS !== 'undefined'
+            },
+            {
+                name: 'GameState loaded',
+                test: () => typeof GameState !== 'undefined'
+            },
+            {
+                name: 'Player class exists',
+                test: () => typeof Player !== 'undefined'
+            },
+            {
+                name: 'ObstacleManager class exists',
+                test: () => typeof ObstacleManager !== 'undefined'
+            },
+            {
+                name: 'PowerUpManager class exists',
+                test: () => typeof PowerUpManager !== 'undefined'
+            },
+            {
+                name: 'EnvironmentManager class exists',
+                test: () => typeof EnvironmentManager !== 'undefined'
+            },
+            {
+                name: 'VehicleManager class exists',
+                test: () => typeof VehicleManager !== 'undefined'
+            },
+            {
+                name: 'GameModeManager class exists',
+                test: () => typeof GameModeManager !== 'undefined'
+            },
+            {
+                name: 'SoundManager class exists',
+                test: () => typeof SoundManager !== 'undefined'
+            },
+            {
+                name: 'ParticleSystem class exists',
+                test: () => typeof ParticleSystem !== 'undefined'
+            },
+            {
+                name: 'TouchControls class exists',
+                test: () => typeof TouchControls !== 'undefined'
+            },
+            {
+                name: 'AchievementManager class exists',
+                test: () => typeof AchievementManager !== 'undefined'
+            },
+            {
+                name: 'LeaderboardManager class exists',
+                test: () => typeof LeaderboardManager !== 'undefined'
+            },
+            {
+                name: 'AccessibilityManager class exists',
+                test: () => typeof AccessibilityManager !== 'undefined'
+            },
+            {
+                name: 'Vehicle class exists',
+                test: () => typeof Vehicle !== 'undefined'
+            }
+        ];
+
+        // Run tests
+        tests.forEach(test => {
+            const div = document.createElement('div');
+            try {
+                const result = test.test();
+                div.className = result ? 'pass' : 'fail';
+                div.textContent = `${test.name}: ${result ? 'PASS' : 'FAIL'}`;
+            } catch (e) {
+                div.className = 'fail';
+                div.textContent = `${test.name}: FAIL (${e.message})`;
+            }
+            results.appendChild(div);
+        });
+
+        console.log('Debug test completed');
+    </script>
+</body>
+</html>

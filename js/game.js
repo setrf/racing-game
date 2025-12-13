@@ -23,8 +23,8 @@ let lastTime = 0;
 let nearMissStreak = 0;
 
 // Settings elements
-let settingsButton, achievementsButton, leaderBoardButton;
-let settingsModal, achievementsModal, leaderBoardModal;
+let settingsButton, achievementsButton, leaderboardButton;
+let settingsModal, achievementsModal, leaderboardModal;
 let currentGameModeSelect, environmentSelect, vehicleSelection;
 
 // Initialize game when page loads
@@ -89,10 +89,15 @@ window.addEventListener('load', () => {
 // Initialize game
 function initGame() {
     console.log('Initializing enhanced racing game...');
-    
+
     // Get canvas and context
     canvas = document.getElementById('gameCanvas');
+    if (!canvas) {
+        console.error('Game canvas not found!');
+        return;
+    }
     ctx = canvas.getContext('2d');
+    console.log('Canvas and context initialized');
     
     // Get UI elements
     startScreen = document.getElementById('startScreen');
@@ -112,21 +117,47 @@ function initGame() {
     // Settings buttons
     settingsButton = document.getElementById('settingsButton');
     achievementsButton = document.getElementById('achievementsButton');
-    leaderBoardButton = document.getElementById('leaderboardButton');
+    leaderboardButton = document.getElementById('leaderboardButton');
     
     // Initialize managers
+    console.log('Initializing game managers...');
     player = new Player(1);
+    console.log('Player initialized');
+
     obstacleManager = new ObstacleManager();
+    console.log('ObstacleManager initialized');
+
     powerUpManager = new PowerUpManager();
+    console.log('PowerUpManager initialized');
+
     environmentManager = new EnvironmentManager();
+    console.log('EnvironmentManager initialized');
+
     vehicleManager = new VehicleManager();
+    console.log('VehicleManager initialized');
+
     gameModeManager = new GameModeManager();
+    console.log('GameModeManager initialized');
+
     soundManager = new SoundManager();
+    console.log('SoundManager initialized');
+
     particleSystem = new ParticleSystem();
+    console.log('ParticleSystem initialized');
+
+    touchControls = new TouchControls(canvas);
+    console.log('TouchControls initialized');
+
     accessibilityManager = new AccessibilityManager();
+    console.log('AccessibilityManager initialized');
+
     achievementManager = new AchievementManager();
+    console.log('AchievementManager initialized');
+
     leaderboardManager = new LeaderboardManager();
-    touchControls = initTouchControls(player, obstacleManager, powerUpManager);
+    console.log('LeaderboardManager initialized');
+
+    console.log('All managers initialized successfully');
     
     // Set up accessibility UI controls
     accessibilityManager.setupUIControls();
@@ -201,7 +232,7 @@ function setupEventListeners() {
         updateAchievementsUI();
     });
     
-    leaderBoardButton.addEventListener('click', () => {
+    leaderboardButton.addEventListener('click', () => {
         document.getElementById('leaderboardModal').classList.remove('hidden');
         updateLeaderboardUI();
     });
